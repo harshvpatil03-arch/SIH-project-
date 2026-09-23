@@ -30,16 +30,20 @@ jobs:
           cache: true
 
       - name: Make Gradlew Executable
-        run: chmod +x android/gradlew || true
+        run: |
+          chmod +x legal_metrology_app/android/gradlew || true
+          chmod +x android/gradlew || true
 
       - name: Install dependencies
+        working-directory: legal_metrology_app
         run: flutter pub get
 
       - name: Build APK (Release)
+        working-directory: legal_metrology_app
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: legal-metrology-inspector-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: legal_metrology_app/build/app/outputs/flutter-apk/*.apk
