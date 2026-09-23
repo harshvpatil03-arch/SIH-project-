@@ -29,46 +29,32 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Make Gradlew Executable
+      - name: Recreate Clean Android Scaffold
+        working-directory: legal_metrology_app
         run: |
-          chmod +x legal_metrology_app/android/gradlew || true
-          chmod +x android/gradlew || true
+          rm -rf android
+          flutter create --platforms=android --org com.example .
+          python3 -c "
+          path = 'android/app/src/main/AndroidManifest.xml'
+          with open(path, 'r') as f:
+              c = f.read()
+          perms = '''    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n    <uses-permission android:name=\"android.permission.CAMERA\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"false\"/>\n'''
+          c = c.replace('<application', perms + '    <application')
+          with open(path, 'w') as f:
+              f.write(c)
+          "
 
       - name: Install dependencies
         working-directory: legal_metrology_app
         run: flutter pub get
 
-      - name: Build APK (Debug)
-        working-directory: legal_metrology_app
-        run: flutter build apk --debug
-
       - name: Build APK (Release)
         working-directory: legal_metrology_app
-        shell: bash
-        run: |
-          set -o pipefail
-          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build.log || {
-            echo "## ❌ Release Build Failed" >> $GITHUB_STEP_SUMMARY
-            echo "### Last 120 lines of build log:" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            tail -n 120 build.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          }
-
-      - name: Upload Build Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-build-log
-          path: legal_metrology_app/build.log
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: legal-metrology-inspector-apk
-          path: legal_metrology_app/build/app/outputs/**/*.apk
+          path: legal_metrology_app/build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
-
-
