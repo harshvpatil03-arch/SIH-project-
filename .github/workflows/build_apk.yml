@@ -46,4 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: legal-metrology-inspector-apk
-          path: legal_metrology_app/build/app/outputs/flutter-apk/*.apk
+          path: |
+            legal_metrology_app/build/app/outputs/flutter-apk/*.apk
+            legal_metrology_app/build/app/outputs/apk/release/*.apk
+          if-no-files-found: error
