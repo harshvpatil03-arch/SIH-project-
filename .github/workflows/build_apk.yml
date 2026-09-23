@@ -40,9 +40,27 @@ jobs:
 
       - name: Build APK (Release)
         working-directory: legal_metrology_app
-        run: flutter build apk --release --no-tree-shake-icons
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build.log || {
+            echo "## ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "### Last 120 lines of build log:" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
+
+      - name: Upload Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-build-log
+          path: legal_metrology_app/build.log
 
       - name: Upload APK Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: legal-metrology-inspector-apk
@@ -50,3 +68,4 @@ jobs:
             legal_metrology_app/build/app/outputs/flutter-apk/*.apk
             legal_metrology_app/build/app/outputs/apk/release/*.apk
           if-no-files-found: error
+
