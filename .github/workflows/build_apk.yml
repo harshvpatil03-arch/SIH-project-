@@ -35,13 +35,25 @@ jobs:
           rm -rf android
           flutter create --platforms=android --org com.example .
           python3 -c "
-          path = 'android/app/src/main/AndroidManifest.xml'
-          with open(path, 'r') as f:
-              c = f.read()
+          import re
+
+          # 1. Update AndroidManifest.xml
+          m_path = 'android/app/src/main/AndroidManifest.xml'
+          with open(m_path, 'r') as f:
+              mc = f.read()
           perms = '''    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n    <uses-permission android:name=\"android.permission.CAMERA\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"false\"/>\n'''
-          c = c.replace('<application', perms + '    <application')
-          with open(path, 'w') as f:
-              f.write(c)
+          mc = mc.replace('<application', perms + '    <application')
+          with open(m_path, 'w') as f:
+              f.write(mc)
+
+          # 2. Update android/app/build.gradle to set minSdk = 21
+          b_path = 'android/app/build.gradle'
+          with open(b_path, 'r') as f:
+              bc = f.read()
+          bc = re.sub(r'minSdk(Version)?(\s*=?\s*)flutter\.minSdkVersion', r'minSdk\1\2 21', bc)
+          with open(b_path, 'w') as f:
+              f.write(bc)
+          print('Patched Android manifest and minSdk=21 successfully')
           "
 
       - name: Install dependencies
@@ -50,7 +62,17 @@ jobs:
 
       - name: Build APK (Release)
         working-directory: legal_metrology_app
-        run: flutter build apk --release --no-tree-shake-icons
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build.log || {
+            echo "Build failed. Dumping last 80 lines to annotations:"
+            tail -n 80 build.log | while IFS= read -r line; do
+              clean_line=$(echo "$line" | tr -d '\r' | sed 's/%/%25/g; s/\n/%0A/g')
+              [ -n "$clean_line" ] && echo "::error::$clean_line"
+            done
+            exit 1
+          }
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
