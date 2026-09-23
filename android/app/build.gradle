@@ -25,7 +25,6 @@ if (flutterVersionName == null) {
 android {
     namespace "com.example.legal_metrology_inspector"
     compileSdk 34
-    ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

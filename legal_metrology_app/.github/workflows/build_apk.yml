@@ -40,7 +40,7 @@ jobs:
 
       - name: Build APK (Release)
         working-directory: legal_metrology_app
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --verbose
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
