@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ministry of Consumer Affairs - Legal Metrology Command Center</title>
+  
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Distinctive Typography: Manrope & JetBrains Mono (Strictly banning Inter, Roboto, Arial, Helvetica) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* OKLCH High-Contrast Flat Palette */
+      --bg-dark: oklch(0.12 0.01 260);
+      --card-bg: oklch(0.16 0.015 260);
+      --card-border: oklch(0.24 0.02 260);
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --accent-blue: oklch(0.58 0.22 250);
+      --pass-green: oklch(0.68 0.22 145);
+      --fail-red: oklch(0.60 0.24 25);
+      --warning-amber: oklch(0.75 0.18 80);
+      /* Sharp Geometry Token */
+      --radius-sm: 2px;
+      --radius-md: 4px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Manrope', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      letter-spacing: -0.01em;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-blue);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .brand h1 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand p {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .poll-pulse {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--bg-dark);
+      border: 1px solid var(--card-border);
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--pass-green);
+      box-shadow: 0 0 6px var(--pass-green);
+    }
+
+    .action-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: white;
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .action-btn:hover {
+      background: var(--card-border);
+      border-color: var(--accent-blue);
+    }
+
+    .container {
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    /* KPI STATS - Sharp Geometry */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-title {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+    }
+
+    .kpi-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* MAIN CONTENT: MAP + TABLE */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 16px;
+      min-height: 560px;
+    }
+
+    @media (max-width: 1100px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* LEAFLET MAP */
+    #map {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      background: #08090c;
+    }
+
+    /* CUSTOM LEAFLET DARK POPUP */
+    .leaflet-popup-content-wrapper {
+      background: var(--card-bg) !important;
+      color: var(--text-main) !important;
+      border: 1px solid var(--card-border) !important;
+      border-radius: var(--radius-md) !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
+      padding: 0 !important;
+    }
+    .leaflet-popup-content {
+      margin: 12px 14px !important;
+      line-height: 1.5 !important;
+    }
+    .leaflet-popup-tip {
+      background: var(--card-bg) !important;
+      border: 1px solid var(--card-border) !important;
+    }
+    .leaflet-container a.leaflet-popup-close-button {
+      color: var(--text-muted) !important;
+      padding: 6px !important;
+    }
+    .leaflet-container a.leaflet-popup-close-button:hover {
+      color: #fff !important;
+    }
+
+    /* SEARCH & FILTER CONTROLS */
+    .filter-toolbar {
+      padding: 10px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-dark);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      font-family: 'Manrope', sans-serif;
+      font-size: 11px;
+      width: 100%;
+    }
+
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-pill {
+      background: var(--bg-dark);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Manrope', sans-serif;
+      transition: all 0.15s ease;
+    }
+
+    .filter-pill:hover {
+      color: white;
+      border-color: var(--accent-blue);
+    }
+
+    .filter-pill.active {
+      background: rgba(0, 128, 255, 0.18);
+      color: #60a5fa;
+      border-color: var(--accent-blue);
+    }
+
+    /* DATA TABLE - Sharp lines */
+    .table-wrapper {
+      overflow-x: auto;
+      flex: 1;
+      max-height: 520px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 11px;
+    }
+
+    th {
+      background: #0f131a;
+      color: var(--text-muted);
+      font-weight: 700;
+      padding: 10px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 10px;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--card-border);
+      vertical-align: top;
+      transition: background 0.15s ease;
+    }
+
+    tr {
+      cursor: pointer;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    tr.active-row td {
+      background: rgba(0, 128, 255, 0.12) !important;
+      border-bottom-color: var(--accent-blue) !important;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 6px;
+      border-radius: var(--radius-sm);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+    }
+
+    .badge-pass {
+      background: rgba(0, 200, 83, 0.15);
+      color: #00e599;
+      border: 1px solid rgba(0, 200, 83, 0.4);
+    }
+
+    .badge-fail {
+      background: rgba(213, 0, 0, 0.15);
+      color: #ff5252;
+      border: 1px solid rgba(213, 0, 0, 0.4);
+    }
+
+    .code-font {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+    }
+
+    .violation-pill {
+      display: inline-block;
+      background: rgba(213, 0, 0, 0.12);
+      color: #ff8a80;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 3px;
+      border: 1px solid rgba(213, 0, 0, 0.3);
+    }
+
+    /* TOAST ALERT */
+    .toast-alert {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--accent-blue);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 9999;
+      transform: translateY(140%);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast-alert.show {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">⚖️</div>
+      <div>
+        <h1>MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION</h1>
+        <p>Directorate of Legal Metrology • Real-Time Enforcement Surveillance</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="poll-pulse">
+        <span class="dot"></span>
+        <span id="poll-label">Live Sync: 3s Polling</span>
+      </div>
+      <button class="action-btn" id="sound-btn" onclick="toggleSound()" title="Toggle violation audio alert chime">
+        🔔 Sound: ON
+      </button>
+      <button class="action-btn" id="export-btn" onclick="exportToCSV()" title="Export inspections ledger to CSV">
+        📥 Export CSV
+      </button>
+      <button class="action-btn" id="refresh-btn" onclick="handleManualRefresh()" title="Force immediate synchronization">
+        ↻ Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- TOP STATS -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-title">Total Processed Labels</span>
+        <span class="kpi-value" id="kpi-total">0</span>
+        <span class="kpi-sub">Packaged commodity edge scans</span>
+      </div>
+      <div class="kpi-card" style="border-left: 3px solid var(--pass-green);">
+        <span class="kpi-title">Compliant Products</span>
+        <span class="kpi-value" style="color: var(--pass-green);" id="kpi-pass">0</span>
+        <span class="kpi-sub">Passes all Rule 6 declarations</span>
+      </div>
+      <div class="kpi-card" style="border-left: 3px solid var(--fail-red);">
+        <span class="kpi-title">Legal Violations Logged</span>
+        <span class="kpi-value" style="color: var(--fail-red);" id="kpi-fail">0</span>
+        <span class="kpi-sub">Notices flagged for prosecution</span>
+      </div>
+      <div class="kpi-card" style="border-left: 3px solid var(--accent-blue);">
+        <span class="kpi-title">Active Field LMOs</span>
+        <span class="kpi-value" style="color: var(--accent-blue);" id="kpi-lmo">1</span>
+        <span class="kpi-sub">Officer R. Sharma (LMO-884920)</span>
+      </div>
+    </div>
+
+    <!-- MAIN TWO COLUMN: MAP + DATA TABLE -->
+    <div class="dashboard-layout">
+      <!-- PANEL 1: LIVE MAP -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">🗺️ Geographic Inspection Map</span>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">🟢 Compliant &nbsp;|&nbsp; 🔴 Violation</span>
+        </div>
+        <div id="map"></div>
+      </div>
+
+      <!-- PANEL 2: LIVE INSPECTIONS TABLE -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">📋 Live Ingested Inspection Payloads</span>
+          <span id="last-updated" style="font-size: 10px; color: var(--text-muted); font-weight: 700;">Polling...</span>
+        </div>
+
+        <!-- SEARCH AND FILTER CONTROLS -->
+        <div class="filter-toolbar">
+          <div class="search-box">
+            <span style="font-size: 11px;">🔍</span>
+            <input type="text" id="search-input" placeholder="Search commodity, MRP, officer, violations..." oninput="handleSearchChange(this.value)">
+          </div>
+          <div class="filter-pills">
+            <button class="filter-pill active" id="pill-all" onclick="setFilter('ALL')">All (<span id="filter-count-all">0</span>)</button>
+            <button class="filter-pill" id="pill-pass" onclick="setFilter('PASS')">🟢 Compliant (<span id="filter-count-pass">0</span>)</button>
+            <button class="filter-pill" id="pill-fail" onclick="setFilter('FAIL')">🔴 Violations (<span id="filter-count-fail">0</span>)</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table id="inspections-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Commodity & Brand</th>
+                <th>MRP / Net Qty</th>
+                <th>Violations & Missing Rules</th>
+                <th>LMO / GPS</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                  Waiting for LMO phone inspections...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-time Toast Alert -->
+  <div id="toast" class="toast-alert">
+    <div style="font-size: 18px;" id="toast-icon">⚡</div>
+    <div>
+      <div style="font-weight: 800; font-size: 11px;" id="toast-title">New Inspection Received!</div>
+      <div style="color: var(--text-muted); font-size: 10px;" id="toast-body">LMO synced data to server.</div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    let map;
+    const markersMap = new Map();
+    let initialBoundsFitted = false;
+    let previousCount = 0;
+    let allRecords = [];
+    let currentFilter = 'ALL';
+    let currentSearchTerm = '';
+    let selectedInspectionId = null;
+    let soundEnabled = true;
+
+    function initMap() {
+      map = L.map('map').setView([28.6139, 77.2090], 11);
+
+      // Watermark-free Esri Dark Canvas Tiles
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; OpenStreetMap contributors, Esri',
+        maxZoom: 16
+      }).addTo(map);
+    }
+
+    function addOrUpdateMarker(record) {
+      if (markersMap.has(record.id)) {
+        return markersMap.get(record.id);
+      }
+
+      const isPass = record.status === 'PASS';
+      const color = isPass ? '#00e599' : '#ff5252';
+
+      const circleMarker = L.circleMarker([record.latitude, record.longitude], {
+        radius: 10,
+        fillColor: color,
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.95
+      }).addTo(map);
+
+      const commodity = (record.extracted_data && (record.extracted_data.generic_name || record.extracted_data.commodity_name)) || 'Packaged Commodity';
+      const mrp = (record.extracted_data && (record.extracted_data.mrp || record.extracted_data.mrp_inclusive_taxes)) || 'N/A';
+      const netQty = (record.extracted_data && record.extracted_data.net_quantity) || 'N/A';
+      const vegDot = (record.extracted_data && record.extracted_data.veg_nonveg_dot) || '';
+      const violations = record.violations || record.missing_fields || [];
+
+      let popupContent = `
+        <div style="font-family: 'Manrope', sans-serif; font-size: 11px; min-width: 220px;">
+          <div style="font-weight: 800; color: ${color}; font-size: 13px; margin-bottom: 6px;">
+            ${isPass ? '🟢 COMPLIANT (PASS)' : '🔴 VIOLATION (FAIL)'}
+          </div>
+          <div style="margin-bottom: 2px;"><b>Product:</b> ${commodity}</div>
+          <div style="margin-bottom: 2px;"><b>MRP:</b> ${mrp}</div>
+          <div style="margin-bottom: 2px;"><b>Net Qty:</b> ${netQty}</div>
+          ${vegDot ? `<div style="margin-bottom: 2px;"><b>Indicator:</b> ${vegDot}</div>` : ''}
+          <div style="margin-bottom: 2px;"><b>Inspector:</b> ${record.officer_name || record.officer_id}</div>
+          <div style="color: #64748b; font-size: 9px; margin-top: 2px;"><b>Engine:</b> ${record.vlm_provider || 'GEMINI 1.5 FLASH'}</div>
+          <div style="color: #94a3b8; font-size: 10px; margin-top: 4px;"><b>Time:</b> ${new Date(record.timestamp).toLocaleString()}</div>
+      `;
+
+      if (violations.length > 0) {
+        popupContent += `<div style="margin-top: 6px; color: #ff5252; font-weight: 700; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">Violations:</div>`;
+        violations.forEach(v => {
+          popupContent += `<div style="color: #ff8a80; font-size: 10px; margin-top: 1px;">• ${v}</div>`;
+        });
+      }
+
+      popupContent += `</div>`;
+      circleMarker.bindPopup(popupContent, { autoPan: true });
+
+      markersMap.set(record.id, circleMarker);
+      return circleMarker;
+    }
+
+    function focusOnInspection(id) {
+      selectedInspectionId = id;
+      const marker = markersMap.get(id);
+      if (marker) {
+        const latLng = marker.getLatLng();
+        map.flyTo(latLng, 13, { duration: 0.8 });
+        marker.openPopup();
+      }
+      highlightSelectedRow();
+    }
+
+    function highlightSelectedRow() {
+      document.querySelectorAll('#table-body tr').forEach(row => {
+        if (row.getAttribute('data-id') === selectedInspectionId) {
+          row.classList.add('active-row');
+        } else {
+          row.classList.remove('active-row');
+        }
+      });
+    }
+
+    function showToast(title, body, isPass) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-icon').textContent = isPass ? '🟢' : '🔴';
+      document.getElementById('toast-title').textContent = title;
+      document.getElementById('toast-body').textContent = body;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    function playAlertChime(isPass) {
+      if (!soundEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (isPass) {
+          // Pleasant rising notification
+          osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+          osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        } else {
+          // Tech attention double ping
+          osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(330, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.35);
+        }
+      } catch (_) {}
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('sound-btn');
+      if (btn) {
+        btn.textContent = soundEnabled ? '🔔 Sound: ON' : '🔕 Sound: OFF';
+        btn.style.color = soundEnabled ? 'white' : 'var(--text-muted)';
+      }
+      showToast('Sound Setting', `Inspection audio alerts ${soundEnabled ? 'Enabled' : 'Muted'}`, soundEnabled);
+    }
+
+    function exportToCSV() {
+      if (!allRecords || allRecords.length === 0) {
+        showToast('Export Alert', 'No inspection records available to export.', false);
+        return;
+      }
+      const headers = ['Inspection ID', 'Status', 'Timestamp', 'Officer ID', 'Officer Name', 'Latitude', 'Longitude', 'Commodity / Generic Name', 'MRP', 'Net Quantity', 'Mfg Date', 'Manufacturer Address', 'Consumer Care', 'Veg Indicator', 'Violations'];
+      const rows = allRecords.map(r => {
+        const d = r.extracted_data || {};
+        const violations = (r.violations || []).join('; ');
+        return [
+          `"${r.id || ''}"`,
+          `"${r.status || ''}"`,
+          `"${r.timestamp || ''}"`,
+          `"${r.officer_id || ''}"`,
+          `"${r.officer_name || ''}"`,
+          r.latitude || '',
+          r.longitude || '',
+          `"${(d.generic_name || d.commodity_name || '').replace(/"/g, '""')}"`,
+          `"${(d.mrp || d.mrp_inclusive_taxes || '').replace(/"/g, '""')}"`,
+          `"${(d.net_quantity || '').replace(/"/g, '""')}"`,
+          `"${(d.mfg_pack_date || d.mfg_packing_date || '').replace(/"/g, '""')}"`,
+          `"${(d.manufacturer_address || d.manufacturer_name_and_address || '').replace(/"/g, '""')}"`,
+          `"${(d.consumer_care || d.consumer_care_details || '').replace(/"/g, '""')}"`,
+          `"${(d.veg_nonveg_dot || '').replace(/"/g, '""')}"`,
+          `"${violations.replace(/"/g, '""')}"`
+        ].join(',');
+      });
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `legal_metrology_inspections_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Export Complete', `Exported ${allRecords.length} records to CSV`, true);
+    }
+
+    const fallbackSampleData = [
+      {
+        "id": "INSP-1726001001",
+        "officer_id": "LMO-884920",
+        "officer_name": "Officer R. Sharma",
+        "latitude": 28.6139,
+        "longitude": 77.2090,
+        "location_accuracy": "SATELLITE_HIGH_ACCURACY",
+        "timestamp": "2026-09-22T10:15:30Z",
+        "status": "PASS",
+        "summary": "Full compliance verified under Rule 6.",
+        "extracted_data": {
+          "generic_name": "Mustard Oil (Kachi Ghani)",
+          "mrp": "₹195.00 inclusive of all taxes",
+          "net_quantity": "1 Litre",
+          "mfg_pack_date": "08/2026",
+          "manufacturer_address": "Shree Ram Agro Industries, Alwar, Rajasthan - 301001",
+          "consumer_care": "Customer Helpdesk: 1800-200-1122, help@shreeram.in",
+          "veg_nonveg_dot": "Green"
+        },
+        "violations": [],
+        "sync_status": "SYNCED"
+      },
+      {
+        "id": "INSP-1726001002",
+        "officer_id": "LMO-884920",
+        "officer_name": "Officer R. Sharma",
+        "latitude": 28.7041,
+        "longitude": 77.1025,
+        "location_accuracy": "SATELLITE_HIGH_ACCURACY",
+        "timestamp": "2026-09-22T11:42:10Z",
+        "status": "FAIL",
+        "summary": "Missing consumer care and taxes format breach.",
+        "extracted_data": {
+          "generic_name": "Imported Choco Wafer Rolls",
+          "mrp": "₹350.00",
+          "net_quantity": "300 g",
+          "mfg_pack_date": "06/2026",
+          "manufacturer_address": "Packed by Global Imports LLC, Okhla Phase III, New Delhi",
+          "consumer_care": null,
+          "veg_nonveg_dot": "Brown"
+        },
+        "violations": [
+          "Consumer Care contact details (email/phone/address) missing",
+          "MRP format does not explicitly state 'inclusive of all taxes'"
+        ],
+        "sync_status": "SYNCED"
+      }
+    ];
+
+    const API_ENDPOINTS = [
+      'http://localhost:8080/api/inspections',
+      'http://127.0.0.1:8080/api/inspections',
+      '/api/inspections'
+    ];
+
+    async function handleManualRefresh() {
+      const btn = document.getElementById('refresh-btn');
+      if (btn) {
+        btn.textContent = '↻ Syncing...';
+        btn.disabled = true;
+      }
+      await fetchInspections(true);
+      setTimeout(() => {
+        if (btn) {
+          btn.textContent = '↻ Refresh';
+          btn.disabled = false;
+        }
+      }, 400);
+    }
+
+    async function fetchInspections(isManual = false) {
+      let fetchedData = null;
+
+      for (const endpoint of API_ENDPOINTS) {
+        try {
+          const response = await fetch(endpoint, { cache: 'no-store' });
+          if (response.ok) {
+            fetchedData = await response.json();
+            const pollLabel = document.getElementById('poll-label');
+            if (pollLabel) pollLabel.textContent = 'Live Sync: Connected (Port 8080)';
+            break;
+          }
+        } catch (_) {
+          // Continue to next endpoint candidate
+        }
+      }
+
+      if (fetchedData && Array.isArray(fetchedData) && fetchedData.length > 0) {
+        allRecords = fetchedData;
+        updateDashboard(fetchedData);
+        if (isManual) {
+          showToast('Dashboard Refreshed', `Synced ${fetchedData.length} records from server.py`, true);
+        }
+      } else {
+        allRecords = fallbackSampleData;
+        updateDashboard(fallbackSampleData);
+        if (isManual) {
+          showToast('Dashboard Refreshed', 'Demo baseline active (start server.py for live bridge)', true);
+        }
+      }
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-pill').forEach(pill => pill.classList.remove('active'));
+      const activePill = document.getElementById(`pill-${filter.toLowerCase()}`);
+      if (activePill) activePill.classList.add('active');
+      renderTable();
+    }
+
+    function handleSearchChange(val) {
+      currentSearchTerm = val.toLowerCase().trim();
+      renderTable();
+    }
+
+    function updateDashboard(records) {
+      document.getElementById('last-updated').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+
+      if (previousCount > 0 && records.length > previousCount) {
+        const newest = records[0];
+        const isPass = newest.status === 'PASS';
+        playAlertChime(isPass);
+        showToast(
+          isPass ? 'New Inspection Passed!' : 'Legal Violation Flagged!',
+          `${newest.officer_id}: ${newest.extracted_data?.commodity_name || newest.extracted_data?.generic_name || 'Item'} logged.`,
+          isPass
+        );
+      }
+      previousCount = records.length;
+
+      let passCount = 0;
+      let failCount = 0;
+      records.forEach(r => {
+        if (r.status === 'PASS') passCount++;
+        else failCount++;
+      });
+
+      document.getElementById('kpi-total').textContent = records.length;
+      document.getElementById('kpi-pass').textContent = passCount;
+      document.getElementById('kpi-fail').textContent = failCount;
+
+      document.getElementById('filter-count-all').textContent = records.length;
+      document.getElementById('filter-count-pass').textContent = passCount;
+      document.getElementById('filter-count-fail').textContent = failCount;
+
+      const bounds = [];
+      records.forEach(r => {
+        if (r.latitude && r.longitude) {
+          addOrUpdateMarker(r);
+          bounds.push([r.latitude, r.longitude]);
+        }
+      });
+
+      // Fit bounds only once initially so user manual panning/zooming is never interrupted
+      if (!initialBoundsFitted && bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+        initialBoundsFitted = true;
+      }
+
+      renderTable();
+    }
+
+    function renderTable() {
+      let filtered = allRecords;
+
+      // Status filter
+      if (currentFilter === 'PASS') {
+        filtered = filtered.filter(r => r.status === 'PASS');
+      } else if (currentFilter === 'FAIL') {
+        filtered = filtered.filter(r => r.status === 'FAIL');
+      }
+
+      // Search term filter
+      if (currentSearchTerm) {
+        filtered = filtered.filter(r => {
+          const commodity = (r.extracted_data?.generic_name || r.extracted_data?.commodity_name || '').toLowerCase();
+          const mfg = (r.extracted_data?.manufacturer_address || r.extracted_data?.manufacturer_name_and_address || '').toLowerCase();
+          const officer = (r.officer_id || '' + ' ' + (r.officer_name || '')).toLowerCase();
+          const violations = (r.violations || []).join(' ').toLowerCase();
+          const id = (r.id || '').toLowerCase();
+          return commodity.includes(currentSearchTerm) ||
+                 mfg.includes(currentSearchTerm) ||
+                 officer.includes(currentSearchTerm) ||
+                 violations.includes(currentSearchTerm) ||
+                 id.includes(currentSearchTerm);
+        });
+      }
+
+      const tbody = document.getElementById('table-body');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">No matching inspection records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => {
+        const isPass = r.status === 'PASS';
+        const badgeClass = isPass ? 'badge-pass' : 'badge-fail';
+        const badgeText = isPass ? '✓ PASS' : '⚠ FAIL';
+        const commodity = r.extracted_data?.generic_name || r.extracted_data?.commodity_name || 'Packaged Commodity';
+        const mfg = r.extracted_data?.manufacturer_address || r.extracted_data?.manufacturer_name_and_address || '—';
+        const mrp = r.extracted_data?.mrp || r.extracted_data?.mrp_inclusive_taxes || '—';
+        const netQty = r.extracted_data?.net_quantity || '—';
+        const violations = r.violations || r.missing_fields || [];
+        const isActive = r.id === selectedInspectionId;
+
+        return `
+          <tr data-id="${r.id}" onclick="focusOnInspection('${r.id}')" class="${isActive ? 'active-row' : ''}" title="Click to view and fly to marker on map">
+            <td>
+              <span class="badge ${badgeClass}">${badgeText}</span>
+              <div style="font-size: 9px; color: var(--text-muted); margin-top: 3px;" class="code-font">${r.id}</div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: #fff;">${commodity}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">${mfg}</div>
+            </td>
+            <td>
+              <div style="font-weight: 700;">${mrp}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">${netQty}</div>
+            </td>
+            <td>
+              ${violations.length === 0 
+                ? '<span style="color: var(--pass-green); font-size: 10px; font-weight: 700;">✓ All Rule 6 declarations verified</span>' 
+                : violations.map(v => `<div class="violation-pill">• ${v}</div>`).join('')
+              }
+            </td>
+            <td>
+              <div style="font-weight: 700;">${r.officer_id}</div>
+              <div class="code-font" style="color: var(--text-muted); font-size: 9px;">${Number(r.latitude).toFixed(4)}, ${Number(r.longitude).toFixed(4)}</div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.onload = () => {
+      initMap();
+      fetchInspections();
+      setInterval(fetchInspections, 3000);
+    };
+  </script>
+</body>
+</html>

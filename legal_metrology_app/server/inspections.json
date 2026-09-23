@@ -1,0 +1,52 @@
+[
+  {
+    "id": "INSP-1726001001",
+    "officer_id": "LMO-884920",
+    "officer_name": "Officer R. Sharma",
+    "latitude": 28.6139,
+    "longitude": 77.2090,
+    "location_accuracy": "SATELLITE_HIGH_ACCURACY",
+    "timestamp": "2026-09-22T10:15:30Z",
+    "status": "PASS",
+    "summary": "Full compliance verified under Legal Metrology Rules 2011.",
+    "unreadable_reason": null,
+    "extracted_data": {
+      "commodity_name": "Mustard Oil (Kachi Ghani)",
+      "mrp_inclusive_taxes": "₹195.00 (Incl. of all taxes)",
+      "net_quantity": "1 Litre",
+      "mfg_packing_date": "08/2026",
+      "manufacturer_name_and_address": "Shree Ram Agro Industries, Alwar, Rajasthan - 301001",
+      "country_of_origin": "India",
+      "consumer_care_details": "Customer Helpdesk: 1800-200-1122, help@shreeram.in"
+    },
+    "violations": [],
+    "sync_status": "SYNCED"
+  },
+  {
+    "id": "INSP-1726001002",
+    "officer_id": "LMO-884920",
+    "officer_name": "Officer R. Sharma",
+    "latitude": 28.7041,
+    "longitude": 77.1025,
+    "location_accuracy": "SATELLITE_HIGH_ACCURACY",
+    "timestamp": "2026-09-22T11:42:10Z",
+    "status": "FAIL",
+    "summary": "Mandatory declarations missing under Rule 6(1) of Legal Metrology 2011.",
+    "unreadable_reason": null,
+    "extracted_data": {
+      "commodity_name": "Imported Choco Wafer Rolls",
+      "mrp_inclusive_taxes": "₹350.00",
+      "net_quantity": "300 g",
+      "mfg_packing_date": "06/2026",
+      "manufacturer_name_and_address": "Packed by Global Imports LLC",
+      "country_of_origin": null,
+      "consumer_care_details": null
+    },
+    "violations": [
+      "Country of Origin not declared for imported commodity",
+      "Consumer Care contact details (email/phone/address) missing",
+      "MRP format does not explicitly state 'inclusive of all taxes'"
+    ],
+    "sync_status": "SYNCED"
+  }
+]
