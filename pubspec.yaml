@@ -10,7 +10,7 @@ dependencies:
   camera: ^0.11.0+2
   flutter:
     sdk: flutter
-  geolocator: ^14.0.2
+  geolocator: ^13.0.2
   http: ^1.2.0
   image_picker: ^1.1.2
 
