@@ -278,10 +278,6 @@ xml
 3.2
 file:///C:/Users/harsh/AppData/Local/Pub/Cache/hosted/pub.dev/xml-6.5.0/
 file:///C:/Users/harsh/AppData/Local/Pub/Cache/hosted/pub.dev/xml-6.5.0/lib/
-legal_metrology_inspector
-3.0
-file:///C:/Users/harsh/OneDrive/Desktop/lib/legal_metrology_app/
-file:///C:/Users/harsh/OneDrive/Desktop/lib/legal_metrology_app/lib/
 sky_engine
 3.2
 file:///C:/src/flutter/flutter/bin/cache/pkg/sky_engine/
@@ -298,4 +294,8 @@ flutter_web_plugins
 3.2
 file:///C:/src/flutter/flutter/packages/flutter_web_plugins/
 file:///C:/src/flutter/flutter/packages/flutter_web_plugins/lib/
+legal_metrology_inspector
+3.0
+file:///c:/Users/harsh/OneDrive/Desktop/lib/legal_metrology_app/
+file:///c:/Users/harsh/OneDrive/Desktop/lib/legal_metrology_app/lib/
 2
