@@ -29,16 +29,17 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew || true
+
       - name: Install dependencies
-        working-directory: ./
         run: flutter pub get
 
       - name: Build APK (Release)
-        working-directory: ./
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: legal-metrology-inspector-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk
