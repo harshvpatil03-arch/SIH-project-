@@ -35,21 +35,6 @@ class LegalMetrologyInspectorApp extends StatelessWidget {
           elevation: 0,
           centerTitle: false,
         ),
-        cardTheme: const CardTheme(
-          color: Color(0xFF101318),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(4)), // Sharp geometry
-            side: BorderSide(color: Color(0xFF222733)),
-          ),
-        ),
-        dialogTheme: const DialogTheme(
-          backgroundColor: Color(0xFF101318),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(4)), // Sharp geometry
-            side: BorderSide(color: Color(0xFF222733)),
-          ),
-        ),
       ),
       home: const LoginScreen(),
     );
