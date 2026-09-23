@@ -34,26 +34,29 @@ jobs:
           rm -rf android
           flutter create --platforms=android --org com.example .
           python3 -c "
-          import re
+          import os, re, sys
+          try:
+              # 1. Update AndroidManifest.xml
+              m_path = 'android/app/src/main/AndroidManifest.xml'
+              with open(m_path, 'r') as f:
+                  mc = f.read()
+              perms = '''    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n    <uses-permission android:name=\"android.permission.CAMERA\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"false\"/>\n'''
+              if 'android.permission.CAMERA' not in mc:
+                  mc = mc.replace('<application', perms + '    <application')
+                  with open(m_path, 'w') as f:
+                      f.write(mc)
 
-          # 1. Update AndroidManifest.xml
-          m_path = 'android/app/src/main/AndroidManifest.xml'
-          with open(m_path, 'r') as f:
-              mc = f.read()
-          perms = '''    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n    <uses-permission android:name=\"android.permission.CAMERA\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"false\"/>\n'''
-          mc = mc.replace('<application', perms + '    <application')
-          with open(m_path, 'w') as f:
-              f.write(mc)
-
-          # 2. Update android/app/build.gradle to set minSdk = 21
-          b_path = 'android/app/build.gradle'
-          with open(b_path, 'r') as f:
-              bc = f.read()
-          bc = re.sub(r'minSdk(Version)?(\s*=?\s*)flutter\.minSdkVersion', r'minSdk\1\2 21', bc)
-          with open(b_path, 'w') as f:
-              f.write(bc)
-
-          print('Scaffold configured successfully')
+              # 2. Update build.gradle or build.gradle.kts
+              b_path = 'android/app/build.gradle.kts' if os.path.exists('android/app/build.gradle.kts') else 'android/app/build.gradle'
+              with open(b_path, 'r') as f:
+                  bc = f.read()
+              bc = re.sub(r'minSdk(Version)?(\s*=?\s*)flutter\.minSdkVersion', r'minSdk\1\2 21', bc)
+              with open(b_path, 'w') as f:
+                  f.write(bc)
+              print(f'Successfully patched {m_path} and {b_path}')
+          except Exception as e:
+              print(f'Error patching scaffold: {e}', file=sys.stderr)
+              sys.exit(1)
           "
 
       - name: Install dependencies
